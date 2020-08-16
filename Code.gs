@@ -114,9 +114,12 @@ function findTimeSubarray(arr, property, timeSubarray) {
         var j = 0;
         for (; j < timeSubarray.length; j++)
         {
-          console.log(arr[i + j][property]+" == "+timeSubarray[j]);
+          console.log(arr[i + j][property]+" found, expecting "+timeSubarray[j]);
           if (arr[i + j][property] != timeSubarray[j])
-                break;
+          {
+            console.log("Pattern broken since I exepcted "+timeSubarray[j] +" but found "+arr[i+j][property]+". Let's start over");    
+            break;
+          }
         }
       console.log("i="+i+", j="+j);
         if (j == timeSubarray.length)
@@ -139,7 +142,10 @@ function findPyramids(disciplines, pattern){
       console.log("Found Pyramid Subarray of "+pattern.join(" ")+" on "+group.key);
       group.values=group.values.slice(subArrayIndex, pattern.length);
        console.log("Group size now "+group.values.length);
-    }
+     } else {
+       console.log("No pyramid in this section. Group size set to 0");
+       group.values=[];
+     }
   });
  
   console.log(pyramid_eligible.length + " out of a total of "+arr.length+" groups"); 
