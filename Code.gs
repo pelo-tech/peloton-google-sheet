@@ -93,7 +93,8 @@ function generateWorkouts(disciplines){
   
   if(raw_data.length>1){
     for (var i = 1; i < raw_data.length; i++) {
-      var obj={"rownum":i};
+      /* Row Number +=1 to account for Header Row. */
+      var obj={"rownum":i+1};
       for(var h=0; h<headers.length;++h){
         obj[headers[h]]=raw_data[i][h];
       }
