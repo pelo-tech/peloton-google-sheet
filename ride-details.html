@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html ng-app="pelotonApp">
+  <head>
+  <style>
+
+  </style>
+    <base target="_top">
+    
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.0/angular.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+<script>
+angular.module('pelotonApp', [])
+  .controller('PelotonRideController', function($scope, $httpParamSerializer) {
+    var rideController = this;
+  rideController.ride=JSON.parse("<?=  JSON.stringify(getRideDetails(ride_id)) ?>");
+    });
+</script>
+</head>
+  <body ng-controller="PelotonRideController as peloton">
+  <div class="card bg-dark text-white">
+    <img src="{{peloton.ride.image_url}}" class="card-img" alt="...">
+    <div class="card-img-overlay">
+      <h4 class="card-title">{{peloton.ride.title}}</h4>
+      <h5 class="card-title">{{peloton.ride.instructor.name}}</h5>
+      <p class="card-text">{{peloton.ride.original_air_time*1000 | date:"yyyy-MM-dd HH:mma"}}</p>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row mx-md-n3 mt-3">
+    <div class="col col-md-4 px-md-n2">
+         <div class="card">
+        <div class="card-body">
+      <h3>{{peloton.ride.title}}</h3>
+      <p class="card-text"> {{peloton.ride.description}}</p>
+           </div>
+       </div>
+    </div>
+    <div class="col col-md-4 px-md-n2">
+      <div class="card">
+        <div class="card-body">
+          <p class="card-text">
+       <b>Rating:</b>{{peloton.ride.overall_rating_avg * 100|number:1}}%
+       <br><b>People who rated:</b> {{peloton.ride.overall_rating_count}}
+       <br><b>Workouts:</b> {{peloton.ride.total_workouts}}
+         <span style='color:red;' ng-if="peloton.ride.total_in_progress_workouts>0">({{peloton.ride.total_in_progress_workouts}} right now)</span>
+       <br><b>Duration:</b> {{peloton.ride.duration / 60}} Minutes
+       <br><b>Difficulty Rating:</b> {{peloton.ride.difficulty_estimate *100|number:1}}%
+       <br><b>Total Following Workouts:</b> {{peloton.ride.total_following_workouts}}
+       <br><b>Your Workouts:</b> {{peloton.ride.total_user_workouts}}
+       <br><b>Favorite:</b> {{peloton.ride.is_favorite}}
+       </p>
+      </div>
+       </div>
+       
+       
+    </div>
+    <div class="col col-md-4 px-md-n2" >
+      <div class="card">
+       <img src="{{peloton.ride.instructor.image_url}}" class="card-img-top"/>
+        <div class="card-body">
+        <p class="card-text"> {{peloton.ride.instructor.bio}} </p>
+        </div>
+    </div>
+  </div>
+</div>
+
+ 
+
+ 
+</body>
+</html>
