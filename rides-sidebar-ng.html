@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html ng-app="pelotonApp">
+  <head>
+  <style>
+
+  </style>
+    <base target="_top">
+    
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.0/angular.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+<script>
+angular.module('pelotonApp', [])
+  .controller('PelotonRideController', function($scope, $httpParamSerializer) {
+    var rideController = this;
+    rideController.loading=false;
+    rideController.filters=[];
+    rideController.formOptions={};
+    rideController.totalRides=null;
+    rideController.rides=[];
+    rideController.page=0;
+    rideController.pages=0;
+    
+    rideController.loadFilters=function(){
+    console.log("Load Filter");
+       google.script.run.withSuccessHandler(function(result){ 
+       angular.forEach(result,function(f){
+        console.log(f);
+        console.log(f.values.length);
+         rideController.formOptions[f.name]=null;
+         if(f.type=='collection'){
+           f.values.sort(function(a,b){return a.list_order-b.list_order});
+         }
+       });
+       rideController.filters=result; 
+       
+       $scope.$digest();})
+      .getRideFilters();
+      };
+    
+     
+    
+    rideController.loadRides=function(page){
+       if(page==null) rideController.resetRides();
+       
+        rideController.loading=true;
+
+     google.script.run.withSuccessHandler(function(result){
+     console.log(JSON.stringify(result));
+        rideController.totalRides=result.total;
+        rideController.page=result.page;
+        rideController.rides.push.apply(rideController.rides,result.rides);
+        rideController.pages=result.pages;
+
+        $scope.$digest();
+        rideController.loading=false;
+        $scope.$digest();
+
+        })
+      .getRides(page,10, rideController.getQueryParams());
+     
+      
+    };
+    
+    rideController.resetRides=function(){
+        rideController.page=0;
+        rideController.pages=0;
+        rideController.rides=[];
+    };
+    
+    
+    rideController.loadRideCounts=function(){
+      
+     google.script.run.withSuccessHandler(function(result){
+     console.log(JSON.stringify(result));
+        rideController.resetRides();
+        rideController.totalRides=result.total;
+        $scope.$digest();
+        })
+      .getRides(0,1, rideController.getQueryParams());
+      };
+    
+    rideController.getQueryParams=function(){
+    
+      var form=rideController.formOptions; 
+      console.log(JSON.stringify(form));
+      var obj={};
+      $(Object.keys(form)).each(function(idx, key){
+        if(form[key]==null) return;
+        else if(form[key]['value']) obj[key]=form[key].value;
+        else obj[key]=form[key];
+      });
+     
+      console.log(JSON.stringify(obj));
+      return $httpParamSerializer(obj);
+     };
+
+    rideController.addBookmark=function (ride){
+      console.log("Add Bookmark "+JSON.stringify(ride));
+      google.script.run.withSuccessHandler(function(result){ 
+          if(result.success){
+          rideController.rides.map(function(ride){ if(ride.id==result.id) ride.is_favorite=true;});
+          $scope.$digest();          
+        }
+      }).addFavoriteRide(ride.id);
+    };
+    
+    rideController.showDetails=function(ride){
+    
+      google.script.run.showRideDetails(ride.id);
+    };
+    rideController.clearBookmark=function (ride){
+      
+      console.log("Clear Bookmark "+JSON.stringify(ride));
+      google.script.run.withSuccessHandler(function(result){ 
+      if(result.success){
+          rideController.rides.map(function(ride){ if(ride.id==result.id) ride.is_favorite=false;});
+          $scope.$digest();          
+        }
+      }).removeFavoriteRide(ride.id);
+    }
+    
+  }).directive("formOnChange", function($parse){
+        return {
+            require: "form",
+            link: function(scope, element, attrs){
+                var callBack = $parse(attrs.formOnChange);
+                element.on("change", function(){
+                    callBack(scope);
+                    return true;
+                });
+            }
+        }
+    });
+</script>
+</head>
+  <body ng-controller="PelotonRideController as peloton" ng-init="peloton.loadFilters()">
+<div class="card" style="width: 18rem;">
+   <div class="card-header">Find Classes</div>
+  <div class="card-body">
+  <form form-on-change="peloton.loadRideCounts()" id="ride-filter-form">
+  <div   id="ride-toggles">
+    <div ng-repeat="filter in peloton.filters | filter: {type:'toggle'}"><input type="checkbox"  ng-model="peloton.formOptions[filter.name]"> <span class='glyphicon' ng-if="filter.values[0].display_image_url" style='background:url({{filter.values[0].display_image_url}}); background-repeat:none; background-size:18px 18px; '>&nbsp; &nbsp;</span> {{filter.display_name}}</div>
+  </div>
+   <div id="ride-dropdowns">
+     <div ng-repeat="filter in peloton.filters | filter: {type:'collection'}">
+     {{filter.display_name}}:  <select  ng-model="peloton.formOptions[filter.name]" ng-options="val as val.display_name for val in filter.values">
+     	<option value="">Select</option>
+      </select>
+     </div>
+   </div>
+    </form>
+    
+   </div>
+   <div class="card-footer">
+   <button ng-disabled="! peloton.totalRides" ng-click="peloton.loadRides()" id="load">Load <span id='total' ng-show="peloton.totalRides!=null">{{peloton.totalRides}}</span> Classes </button>
+   </div>
+</div>
+    
+
+<div id="rides" class="card-columns">
+
+<div class="card" ng-repeat="ride  in peloton.rides" style="max-width: 400px">
+ 
+     <img class="card-img-top" src="{{ride.image_url}}" alt="{{ride.title}} with {{ride.instructor.name}}">
+ 
+     <div class="card-body">
+       <span ng-if="ride.user_workouts" class="badge badge-pill badge-success" title="You took this ride {{ride.user_workouts}} time(s)">Taken</span>
+       <a href="#" ng-if="ride.is_favorite" ng-click="peloton.clearBookmark(ride)" class="badge badge-pill badge-secondary">Bookmarked</a>
+       <a href="#" ng-if="!ride.is_favorite" ng-click="peloton.addBookmark(ride)"  class="badge badge-pill badge-info">Add Bookmark</a>
+
+       <h5 class="card-title">{{ride.title}}</h5>
+       <h6 class="card-subtitle mb-2 text-muted">{{ride.instructor.name}}<br>Aired on {{ride.aired | date:'MM/dd/yyyy @ h:mma'}}</h6> 
+       <p class="card-text">{{ride.description}}</p>
+     </div>
+     <div class="card-footer">
+       <small class="text-muted">{{ride.workouts}} total workouts</small>
+       <a href="#" ng-click="peloton.showDetails(ride)" data-ride-id="{{ride.id}}" class="ride-load-button load-ride btn btn-primary">Details</a>
+     </div>
+   </div>
+ 
+ 
+
+
+   <button ng-show="!peloton.loading && peloton.page+1 < peloton.pages" ng-click="peloton.loadRides(peloton.page+1)" id="load">Load More (Page {{peloton.page+1}}/{{peloton.pages}}) </button>
+
+
+</div>
+
+
+ 
+</body>
+</html>
+

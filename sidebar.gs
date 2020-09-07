@@ -2,7 +2,8 @@ function onOpen() {
    SpreadsheetApp.getUi()  
       .createMenu('Peloton')
       .addItem('Login', 'showSidebarLogin')
-      .addItem('Reload Data', 'whoop_rebuild_history')
+      .addItem('Find Rides', 'showSidebarRides')
+      .addItem('Reload Data', 'importData')
       .addToUi();
 }
 
@@ -22,11 +23,26 @@ function handleSidebarLogin(obj){
 }
 
 function showSidebarLogin() {
-  var html = HtmlService.createHtmlOutputFromFile('login.html')
+  var html = HtmlService.createHtmlOutputFromFile('login-sidebar.html')
       .setTitle('Peloton Login')
-      .setWidth(320);
+      .setWidth(320).setHeight(550);
+      SpreadsheetApp.getUi() // Or DocumentApp or SlidesApp or FormApp.
+      .showModalDialog(html, "Peloton Log In");
+}
+
+function showSidebarRides() {
+  var html = HtmlService.createHtmlOutputFromFile('rides-sidebar-ng.html')
+      .setTitle('Peloton On-Demand Ride Search');
   SpreadsheetApp.getUi() // Or DocumentApp or SlidesApp or FormApp.
       .showSidebar(html);
 }
 
 
+function showRideDetails(id){
+  var template=HtmlService.createTemplateFromFile("ride-details.html");
+  template.ride_id=id;
+  
+  var output=template.evaluate();
+  var html=HtmlService.createHtmlOutput().setContent(output.getContent()).setWidth(800).setHeight(800).setTitle("Ride Details");
+  SpreadsheetApp.getUi().showModalDialog(html,"Ride Details");
+  }
