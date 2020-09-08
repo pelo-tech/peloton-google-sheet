@@ -31,9 +31,10 @@ function showSidebarLogin() {
 }
 
 function showSidebarRides() {
-  var html = HtmlService.createHtmlOutputFromFile('rides-sidebar-ng.html')
-      .setTitle('Peloton On-Demand Ride Search');
-  SpreadsheetApp.getUi() // Or DocumentApp or SlidesApp or FormApp.
+  var tmpl = HtmlService.createTemplateFromFile('rides-sidebar-ng.html').evaluate();
+  var html=HtmlService.createHtmlOutput().setContent(tmpl.getContent())
+    .setTitle('Peloton On-Demand Ride Search');
+  SpreadsheetApp.getUi() 
       .showSidebar(html);
 }
 
