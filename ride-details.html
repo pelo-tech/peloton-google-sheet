@@ -15,7 +15,7 @@
 angular.module('pelotonApp', [])
   .controller('PelotonRideController', function($scope, $httpParamSerializer) {
     var rideController = this;
-  rideController.ride=JSON.parse("<?=  JSON.stringify(getRideDetails(ride_id)) ?>");
+    rideController.ride=JSON.parse("<?=  JSON.stringify(getRideDetails(ride_id)) ?>");
     });
 </script>
 </head>

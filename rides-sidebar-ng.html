@@ -10,23 +10,22 @@
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.0/angular.min.js"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+<link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
 
 <script>
 angular.module('pelotonApp', [])
   .controller('PelotonRideController', function($scope, $httpParamSerializer) {
     var rideController = this;
     rideController.loading=false;
-    rideController.filters=[];
     rideController.formOptions={};
     rideController.totalRides=null;
     rideController.rides=[];
     rideController.page=0;
     rideController.pages=0;
-    
+    rideController.filters=JSON.parse("<?=  JSON.stringify(getRideFilters()) ?>");
+
     rideController.loadFilters=function(){
-    console.log("Load Filter");
-       google.script.run.withSuccessHandler(function(result){ 
-       angular.forEach(result,function(f){
+       angular.forEach(rideController.filters,function(f){
         console.log(f);
         console.log(f.values.length);
          rideController.formOptions[f.name]=null;
@@ -34,10 +33,6 @@ angular.module('pelotonApp', [])
            f.values.sort(function(a,b){return a.list_order-b.list_order});
          }
        });
-       rideController.filters=result; 
-       
-       $scope.$digest();})
-      .getRideFilters();
       };
     
      
@@ -155,7 +150,11 @@ angular.module('pelotonApp', [])
     
    </div>
    <div class="card-footer">
-   <button ng-disabled="! peloton.totalRides" ng-click="peloton.loadRides()" id="load">Load <span id='total' ng-show="peloton.totalRides!=null">{{peloton.totalRides}}</span> Classes </button>
+   <button ng-disabled="! peloton.totalRides" ng-click="peloton.loadRides()"
+   class="badge badge-pill badge-danger" id="load">Load <span id='total' ng-show="peloton.totalRides!=null">{{peloton.totalRides}}</span> Classes </button> 
+     <a  ng-disabled="! peloton.totalRides" target="_blank" class="text-danger" title="Search on Peloton Site" href="https://members.onepeloton.com/classes/cycling?utm_source=ios_app&utm_medium=in_app&{{peloton.getQueryParams()}}">
+           <span class="fa fa-share"></span>
+        </a>
    </div>
 </div>
     
@@ -168,8 +167,8 @@ angular.module('pelotonApp', [])
  
      <div class="card-body">
        <span ng-if="ride.user_workouts" class="badge badge-pill badge-success" title="You took this ride {{ride.user_workouts}} time(s)">Taken</span>
-       <a href="#" ng-if="ride.is_favorite" ng-click="peloton.clearBookmark(ride)" class="badge badge-pill badge-secondary">Bookmarked</a>
-       <a href="#" ng-if="!ride.is_favorite" ng-click="peloton.addBookmark(ride)"  class="badge badge-pill badge-info">Add Bookmark</a>
+       <button ng-if="ride.is_favorite" ng-click="peloton.clearBookmark(ride)" class="badge badge-pill badge-secondary">Bookmarked</button>
+       <button ng-if="!ride.is_favorite" ng-click="peloton.addBookmark(ride)"  class="badge badge-pill badge-info">Add Bookmark</button>
 
        <h5 class="card-title">{{ride.title}}</h5>
        <h6 class="card-subtitle mb-2 text-muted">{{ride.instructor.name}}<br>Aired on {{ride.aired | date:'MM/dd/yyyy @ h:mma'}}</h6> 
@@ -177,15 +176,25 @@ angular.module('pelotonApp', [])
      </div>
      <div class="card-footer">
        <small class="text-muted">{{ride.workouts}} total workouts</small>
-       <a href="#" ng-click="peloton.showDetails(ride)" data-ride-id="{{ride.id}}" class="ride-load-button load-ride btn btn-primary">Details</a>
+       <button ng-click="peloton.showDetails(ride)" data-ride-id="{{ride.id}}" class="ride-load-button badge-pill badge badge-danger">Details</button>
+       
+       <a target="_blank" class="text-danger" title="Open on Peloton Site" href="https://members.onepeloton.com/classes/cycling?utm_source=ios_app&utm_medium=in_app&{{peloton.getQueryParams()}}&modal=classDetailsModal&classId={{ride.id}}">
+           <span class="fa fa-share"></span>
+        </a>
+       
      </div>
    </div>
  
  
 
-
-   <button ng-show="!peloton.loading && peloton.page+1 < peloton.pages" ng-click="peloton.loadRides(peloton.page+1)" id="load">Load More (Page {{peloton.page+1}}/{{peloton.pages}}) </button>
-
+<div ng-if="peloton.rides.length>0" class="card" id="load">
+<div class="card-body">
+  <p class="card-text"><small class="text-muted">Showing page {{peloton.page+1}} out of {{peloton.pages}}(s). 
+  Displaying {{peloton.rides.length}} out of  {{peloton.totalRides}} total rides found.</small></p>
+   <button ng-show="!peloton.loading && peloton.page+1 < peloton.pages" ng-click="peloton.loadRides(peloton.page+1)" 
+   class="badge badge-pill badge-danger">Load More (Page {{peloton.page+1}}/{{peloton.pages}}) </button>
+</div>
+</div>
 
 </div>
 
