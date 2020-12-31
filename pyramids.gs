@@ -2,14 +2,16 @@ function processPyramids(){
   var pyramids=getAllPyramidWorkouts();
   if(pyramids.length>0){
     var  workouts = SpreadsheetApp.getActive().getSheetByName('Workouts');
-    var range = workouts.getRange("S1:S"+ workouts.getLastRow());
+    var range = workouts.getRange("S1:T"+ workouts.getLastRow());
     range.clear();
     workouts.getRange("S1").setValue("PYRAMID");
+    workouts.getRange("T1").setValue("Pyramid Date");
     var values=range.getValues();
     pyramids.map(pyramid=>{
       pyramid.map(workout=>{
         // remember we are in a zero based array but chose to populate 'row numbers which are 1 based'
         values[workout.rownum -1][0]=true;
+        values[workout.rownum -1][1]=pyramid[0]["Workout Timestamp"];
       });
     });
     range.setValues(values);
