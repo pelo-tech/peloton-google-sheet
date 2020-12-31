@@ -1,42 +1,88 @@
-function findPyramids(disciplines, pattern){
-  var results=generateWorkouts(disciplines);
-  // Trim off just the date and get groups of objects by date
-  var arr=groupByArray(results,function(result){ return result["Workout Timestamp"].substring(0,10);});
-  var pyramid_eligible=arr.filter(function(group){ return group.values.length >= pattern.length; });
-  pyramid_eligible.map(function(group){
-     var subArrayIndex=findTimeSubarray(group.values,"Length (minutes)",pattern);
-    console.log("Subarray: "+subArrayIndex);
-     if(subArrayIndex>-1){
-      console.log("Found Pyramid Subarray of "+pattern.join(" ")+" on "+group.key);
-      group.values=group.values.slice(subArrayIndex, pattern.length);
-       console.log("Group size now "+group.values.length);
-    }
-  });
- 
-  console.log(pyramid_eligible.length + " out of a total of "+arr.length+" groups"); 
-  return pyramid_eligible;
+function processPyramids(){
+  var pyramids=getAllPyramidWorkouts();
+  if(pyramids.length>0){
+    var  workouts = SpreadsheetApp.getActive().getSheetByName('Workouts');
+    var range = workouts.getRange("S1:S"+ workouts.getLastRow());
+    range.clear();
+    workouts.getRange("S1").setValue("PYRAMID");
+    var values=range.getValues();
+    pyramids.map(pyramid=>{
+      pyramid.map(workout=>{
+        // remember we are in a zero based array but chose to populate 'row numbers which are 1 based'
+        values[workout.rownum -1][0]=true;
+      });
+    });
+    range.setValues(values);
+    var config = SpreadsheetApp.getActive().getSheetByName(CONFIG_SHEET_NAME);
+    config.getRange(PYRAMIDS_DETECTED_CELL).setValue(pyramids.length);
+  }
 }
 
-function processPyramids(){
-   var config = SpreadsheetApp.getActive().getSheetByName(CONFIG_SHEET_NAME);
+function getAllPyramidWorkouts(){
+  var config = SpreadsheetApp.getActive().getSheetByName(CONFIG_SHEET_NAME);
    var pattern=config.getRange(PYRAMID_PATTERN_CELL).getValue().split(",");
   if(pattern.length<2) {
     console.log("No pyramid pattern. Aborting pyramid processing."); 
     return;
   }
-  var pyramids= findPyramids(["Cycling"],pattern);
-  var  workouts = SpreadsheetApp.getActive().getSheetByName('Workouts');
+  var clusters= findStackedWorkouts(["Cycling"],pattern);
+  var pyramids=[];
+  clusters.map(cluster =>{
+    var subArrayIndex=findTimeSubarray(cluster,"Length (minutes)",pattern);
+    if(subArrayIndex==-1){ 
+      Logger.log("BAD PYRAMID - DISCARDING ");
+    }  else {
+      Logger.log("Good Pyramid starting at "+subArrayIndex+ "- Row "+cluster[subArrayIndex].rownum);
+      pyramids.push(cluster.slice(subArrayIndex, pattern.length));
+    }
+  });
   
-  var range = workouts.getRange("S1:S"+ workouts.getLastRow());
-  range.clear();
+  Logger.log("Total found of. "+ pyramids.length+" pyramids");
+  pyramids.map(pyramid=>{
+    Logger.log("=======[Pyramid:"+pyramid[0]["Workout Timestamp"].substring(0,10)+"]==========");
+    pyramid.map(workout=>{
+      Logger.log("     "+workout["Instructor Name"]+":"+workout["Title"] +" taken at "+workout["Workout Timestamp"]);
+    });
+  });
+  return pyramids;
+}
+
+
+function findStackedWorkouts(disciplines,pattern){
+ pattern=pattern.map(n => { return parseInt(n)});
+ var config = SpreadsheetApp.getActive().getSheetByName(CONFIG_SHEET_NAME);
+ var pattern=config.getRange(PYRAMID_PATTERN_CELL).getValue().split(",");
+ var pauseMinutesValue=config.getRange(PYRAMIDS_PAUSE_MINUTES_CELL).getValue();
+ // default is 10 min
+ var pauseMinutes= pauseMinutesValue || 10;
   
-  workouts.getRange("S1").setValue("PYRAMID");
-  pyramids.map(p => {
-               console.log("Pyramid on "+p.key +" of "+ p.values.length+" rides");
-  p.values.map(obj => {
-               console.log("Rownum "+obj['rownum']+"--"+obj["Instructor Name"]+":"  +obj["Title"]);
-               workouts.getRange("S"+ obj["rownum"]).setValue(true);
-               });
-               });
-  config.getRange(PYRAMIDS_DETECTED_CELL).setValue(pyramids.length);
+ var workouts=generateWorkouts(disciplines);
+ 
+    var totalMinutes=pattern.reduce( function(a,b){return parseInt(a)+parseInt(b)},0);  // This is the minimum total duration of the pyramid
+     Logger.log("Looking for clusters of minimum timespan "+totalMinutes+" minutes where the maximum distance between nodes less than "+pauseMinutes+" minutes from the end of the last one");
+
+     var TIME_PROP="timestamp";
+     var ID_PROP="rownum";
+     var DURATION_PROP="duration";
+ 
+     var items=workouts.map(workout=>{
+         workout[TIME_PROP]=new Date(workout["Workout Timestamp"]).getTime(); 
+         workout[DURATION_PROP]=parseInt(workout["Length (minutes)"]) * 60 * 1000;
+         return workout;}
+         );
+
+    var clusters=ClusterAnalysis({
+       items:items,
+       idProperty:ID_PROP,
+       timeProperty:TIME_PROP,
+       durationProperty:DURATION_PROP,
+       debug:false,
+       minTimeSpan:totalMinutes * 60 * 1000,
+       maxItemDistance:pauseMinutes * 60 * 1000,
+       minSize:pattern.length
+     });
+     
+       Logger.log("Got "+clusters.length+"  clusters");
+ 
+return clusters;
 }

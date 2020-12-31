@@ -8,6 +8,9 @@ var RECORD_COUNT_CELL="B7";
 var PYRAMID_PATTERN_CELL="B8";
 var PYRAMIDS_DETECTED_CELL="B9";
 
+// How much time between pyramid workouts
+var PYRAMIDS_PAUSE_MINUTES_CELL="B10";
+
 var PELOTON_PLATFORM="web";
 var PELOTON_API_BASE="https://api.onepeloton.com";
 var WORKOUTS_SHEET_NAME="Workouts";
