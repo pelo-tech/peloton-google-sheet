@@ -52,8 +52,10 @@ function findStackedWorkouts(disciplines,pattern){
  pattern=pattern.map(n => { return parseInt(n)});
  var config = SpreadsheetApp.getActive().getSheetByName(CONFIG_SHEET_NAME);
  var pattern=config.getRange(PYRAMID_PATTERN_CELL).getValue().split(",");
- var pauseMinutes=config.getRange(PYRAMIDS_PAUSE_MINUTES_CELL).getValue();
- 
+ var pauseMinutesValue=config.getRange(PYRAMIDS_PAUSE_MINUTES_CELL).getValue();
+ // default is 10 min
+ var pauseMinutes= pauseMinutesValue || 10;
+  
  var workouts=generateWorkouts(disciplines);
  
     var totalMinutes=pattern.reduce( function(a,b){return parseInt(a)+parseInt(b)},0);  // This is the minimum total duration of the pyramid
