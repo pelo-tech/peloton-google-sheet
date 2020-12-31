@@ -16,6 +16,7 @@ function ClusterAnalysis(config){
      var partialCluster=[];
      var ID_PROP=config.idProperty;
      var TIME_PROP=config.timeProperty;
+     var DURATION_PROP=config.durationProperty;
      
      // sort items in REVERSE time order, but build clusters in FORWARD time order 
      items=items.sort((a,b)=> b[TIME_PROP]-a[TIME_PROP]);
@@ -34,8 +35,8 @@ function ClusterAnalysis(config){
          
          var previousItem=items[i-1];
          
-         // Check if in the same cluster
-         if(Math.abs(currentItem[TIME_PROP]-previousItem[TIME_PROP]) < maxItemDistance){
+         // Check if in the same cluster -- remember this is a reverse sorted Array!!!!!
+         if(Math.abs( currentItem[TIME_PROP] + currentItem[DURATION_PROP] - previousItem[TIME_PROP])< maxItemDistance){
          
              partialCluster.unshift(currentItem);
              
