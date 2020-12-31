@@ -37,6 +37,16 @@ function getConfigDetails(){
 }
 
 
+Array.prototype.max = function() {
+  return Math.max.apply(null, this);
+};
+
+Array.prototype.min = function() {
+  return Math.min.apply(null, this);
+};
+
+
+
 function findTimeSubarray(arr, property, timeSubarray) {
     for (var i = 0; i < 1 + (arr.length - timeSubarray.length); i++) {
         var j = 0;
